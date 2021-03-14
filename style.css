@@ -1,0 +1,348 @@
+/** @format */
+
+@import url("https://fonts.googleapis.com/css2?family=Ubuntu:wght@700&display=swap");
+
+:root {
+	--color-gray: #6e6e6e;
+	--color-orange: #ff8b00;
+	--color-blue: skyblue;
+	--color-white: #fff;
+	--color-yellow: #ffc504;
+	--color-red: #ef5260;
+	--color-green: #61bb50;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+html {
+	padding: 20px;
+	font-family: "Ubuntu", sans-serif;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+body {
+	color: var(--color-gray);
+}
+
+/* Nav */
+nav .logo {
+	background-color: var(--color-blue);
+	width: fit-content;
+	display: flex;
+	color: var(--color-white);
+	align-items: center;
+	justify-content: center;
+	gap: 20px;
+	padding: 20px 40px;
+	border-radius: 10px;
+	font-size: 3rem;
+}
+
+nav .logo img {
+	width: 50px;
+}
+
+/* Main */
+main {
+	max-width: 800px;
+	padding: 100px 0px;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	grid-auto-rows: 300px;
+}
+
+main .panels {
+	display: grid;
+	grid-template-rows: 1fr 1fr;
+}
+
+main .panels button {
+	width: fit-content;
+	height: fit-content;
+	padding: 20px 40px;
+	background-color: var(--color-green);
+	border-radius: 10px;
+	border: none;
+	color: var(--color-white);
+	font-family: inherit;
+	cursor: pointer;
+	font-size: 1rem;
+}
+
+main .panels .balance {
+	background: var(--color-gray);
+	color: var(--color-white);
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	padding: 20px;
+	height: 100px;
+	width: fit-content;
+	border-radius: 10px;
+}
+
+main .panels h3 {
+	align-self: start;
+}
+
+main .panels h2 {
+	align-self: end;
+	font-size: 1.5rem;
+}
+
+main canvas {
+	width: 300px !important;
+	height: 300px !important;
+}
+
+/* Transactions */
+section.transactions {
+	color: var(--color-gray);
+	display: flex;
+	gap: 20px;
+	width: 100%;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+}
+
+.filter-transactions {
+	display: grid;
+	width: 100%;
+	background: var(--color-gray);
+	padding: 5px 15px;
+	grid-template-columns: repeat(4, 1fr);
+	border-radius: 20px;
+	color: var(--color-white);
+	font-size: 12px;
+	align-items: center;
+	justify-content: center;
+	gap: 20px;
+}
+
+.filter-transactions select {
+	border: none;
+	border-radius: 15px;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	padding: 5px 10px;
+	background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+	background-repeat: no-repeat;
+	background-position-x: 95%;
+	background-position-y: 55%;
+}
+
+.list-transactions {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	width: 100%;
+}
+
+.list-transactions .date {
+	font-size: 12px;
+}
+
+section.transactions #debit {
+	color: var(--color-red);
+}
+
+section.transactions #credit {
+	color: var(--color-green);
+}
+
+section.transactions .list-transactions .transaction {
+	width: 100%;
+	background: var(--color-gray);
+	color: var(--color-white);
+	padding: 10px 15px;
+	border-radius: 5px;
+	align-items: center;
+	display: grid;
+	grid-template-columns: auto 100px 100px;
+}
+
+section.transactions .list-transactions .transaction .amount {
+	justify-self: end;
+}
+
+/* Form */
+section.form {
+	position: absolute;
+	width: 300px;
+	background: var(--color-blue);
+	box-shadow: 0 25px 45px rgba(0, 0, 0, 0.1);
+	padding: 30px;
+	border-radius: 10px;
+	z-index: 10;
+	visibility: hidden;
+	top: 10%;
+	left: calc(50% - 150px);
+}
+
+section.form h2 {
+	font-size: 2rem;
+	color: var(--color-white);
+}
+
+form {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+form label {
+	color: var(--color-white);
+}
+
+form input,
+form select,
+form textarea {
+	font-family: inherit;
+	margin-top: 5px;
+	padding: 10px;
+	background: var(--color-white);
+	border: none;
+	border-radius: 5px;
+	width: 100%;
+	resize: none;
+}
+
+form .buttons {
+	display: grid;
+	grid-template-columns: 1fr 2fr;
+	width: 100%;
+	justify-content: space-between;
+}
+
+form .buttons > * {
+	padding: 10px 20px;
+	width: fit-content;
+	align-self: flex-end;
+	justify-self: end;
+	border: none;
+	border-radius: 5px;
+	font-family: inherit;
+	cursor: pointer;
+	color: white;
+}
+
+#cancel-form {
+	background: var(--color-red);
+}
+
+#register-form {
+	background: var(--color-green);
+}
+
+form div {
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	flex-direction: column;
+}
+
+form select {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+	background-repeat: no-repeat;
+	background-position-x: 95%;
+	background-position-y: 55%;
+}
+
+/* Cloak */
+#cloak {
+	width: 100%;
+	height: 100vh;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 9;
+	top: 0;
+	visibility: hidden;
+	left: 0;
+	backdrop-filter: blur(2px);
+	position: absolute;
+}
+
+.message {
+	color: red;
+}
+
+/* Chart */
+.chart section {
+	background: var(--color-gray);
+	color: var(--color-white);
+	padding: 5px 15px;
+	font-size: 12px;
+	border-radius: 15px;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+}
+
+.chart section button {
+	border-radius: 10px;
+	border: none;
+	color: var(--color-white);
+	background: var(--color-blue);
+	font-family: inherit;
+	cursor: pointer;
+	padding: 2px 10px;
+}
+
+@media only screen and (max-width: 600px) {
+	nav .logo {
+		width: fit-content;
+		font-size: 5vw;
+	}
+
+	main {
+		grid-template-rows: 1fr 1fr;
+		grid-template-columns: none;
+		align-items: center;
+		justify-items: center;
+		padding: 0;
+	}
+
+	main .panels {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+		gap: 40px;
+	}
+
+	main .panels .balance,
+	main .panels button {
+		width: 80%;
+	}
+
+	main .panels h3 {
+		font-size: 6vw;
+	}
+
+	main .panels h2 {
+		font-size: 10vw;
+	}
+
+	main .chart {
+		width: 80%;
+	}
+
+	main canvas {
+		width: 100% !important;
+		height: 100% !important;
+		margin-top: 40px;
+	}
+
+	.filter-transactions select {
+		font-size: 10px;
+	}
+}
