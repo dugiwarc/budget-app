@@ -1,54 +1,174 @@
 <?php
-
 session_start();
-$con = mysqli_connect("localhost", "dugiwarc", "069249335", "budget_app");
-
+$con = mysqli_connect("mysql-georgebotnaru.alwaysdata.net", "214676_test", "069249335", "georgebotnaru_budget_app");
 if (mysqli_connect_errno()) {
     echo "Failed to connect" . mysqli_connect_errno();
 }
 
+if (isset($_POST['Filtrer'])) {
+    $_SESSION['f_cats'] = $_POST['f_cats'];
+    $_SESSION['f_moyen'] = $_POST['f_moyen'];
+    $_SESSION['f_crdb'] = $_POST['f_crdb'];
+}
+
+if (isset($_POST['mensuel'])) {
+    $_SESSION['mode'] = 'Mensuel';
+} else if (isset($_POST['annuel'])) {
+    $_SESSION['mode'] = 'Annuel';
+}
+
+if (!isset($_SESSION['mode'])) {
+    $_SESSION['mode'] = 'Annuel';
+}
+
+if (!isset($_SESSION['year'])) {
+    $_SESSION['year'] = 2021;
+}
+
+if (!isset($_SESSION['month'])) {
+    $_SESSION['month'] = 3;
+}
+
+
+if (isset($_POST['register-presentation'])) {
+    if ($_POST['year'])
+        $_SESSION['year'] = $_POST['year'];
+    if ($_POST['month'])
+        $_SESSION['month'] = $_POST['month'];
+}
+
 // Queries
 $type_paiements_query = mysqli_query($con, "SELECT idMoyenPaiement, moyenPaiement FROM moyenpaiements");
+$type_crdb_query = mysqli_query($con, "SELECT DISTINCT(crdb) FROM categories");
 $type_paiements_query_filter = mysqli_query($con, "SELECT idMoyenPaiement, moyenPaiement FROM moyenpaiements");
 $categorie_query = mysqli_query($con, "SELECT idCategories, nomCategorie FROM categories");
 $categorie_query_filter = mysqli_query($con, "SELECT idCategories, nomCategorie FROM categories");
 $transactions_query = mysqli_query($con, "SELECT dataTransaction, montant, idCategories, idMoyenPaiement FROM transactions");
-$transactions_query_last_5 = mysqli_query($con, "SELECT idTransactions, dataTransaction, montant, transactions.idCategories, categories.crdb, idMoyenPaiement FROM transactions INNER JOIN categories WHERE categories.idCategories = transactions.idCategories ORDER BY idTransactions DESC LIMIT 5");
 
 // Lambdas
 function getCategoryById($id)
 {
-    $con = mysqli_connect("localhost", "dugiwarc", "069249335", "budget_app");
+    $con = mysqli_connect("mysql-georgebotnaru.alwaysdata.net", "214676_test", "069249335", "georgebotnaru_budget_app");
     $cats_array_query = mysqli_query($con, "SELECT nomCategorie FROM categories WHERE idCategories = $id");
     $cats_array = mysqli_fetch_array($cats_array_query);
     return $cats_array[0];
 };
 
-function getDebit()
+function getDebitMonthly()
 {
-    $con = mysqli_connect("localhost", "dugiwarc", "069249335", "budget_app");
-    $debit_query = mysqli_query($con, "SELECT SUM(montant) AS total FROM ( SELECT montant, categories.crdb FROM transactions INNER JOIN categories WHERE transactions.idCategories = categories.idCategories) AS sum_credit WHERE sum_credit.crdb = -1");
+    $month = $_SESSION['month'];
+    $con = mysqli_connect("mysql-georgebotnaru.alwaysdata.net", "214676_test", "069249335", "georgebotnaru_budget_app");
+    $debit_query = mysqli_query($con, "SELECT SUM(montant) AS total FROM ( SELECT montant, categories.crdb FROM transactions INNER JOIN categories WHERE transactions.idCategories = categories.idCategories AND MONTH(dataTransaction) = $month) AS sum_credit WHERE sum_credit.crdb = -1");
     $debit_total = mysqli_fetch_array($debit_query);
     return $debit_total[0];
 }
 
-function getCredit()
+function getCreditMonthly()
 {
-    $con = mysqli_connect("localhost", "dugiwarc", "069249335", "budget_app");
+    $month = $_SESSION['month'];
+    $con = mysqli_connect("mysql-georgebotnaru.alwaysdata.net", "214676_test", "069249335", "georgebotnaru_budget_app");
     $credit_query = mysqli_query(
         $con,
-        "SELECT SUM(montant) AS total FROM ( SELECT montant, categories.crdb FROM transactions INNER JOIN categories WHERE transactions.idCategories = categories.idCategories) AS sum_credit WHERE sum_credit.crdb = 1"
+        "SELECT SUM(montant) AS total FROM ( SELECT montant, dataTransaction, categories.crdb FROM transactions INNER JOIN categories WHERE transactions.idCategories = categories.idCategories AND MONTH(dataTransaction) = $month) AS sum_credit WHERE sum_credit.crdb = 1"
     );
 
     $credit_total = mysqli_fetch_array($credit_query);
     return $credit_total[0];
 }
 
+
+function getDebitYearly()
+{
+    $year = $_SESSION['year'];
+    $con = mysqli_connect("mysql-georgebotnaru.alwaysdata.net", "214676_test", "069249335", "georgebotnaru_budget_app");
+    $debit_query = mysqli_query($con, "SELECT SUM(montant) AS total FROM ( SELECT montant, categories.crdb FROM transactions INNER JOIN categories WHERE transactions.idCategories = categories.idCategories AND YEAR(dataTransaction) = $year) AS sum_credit WHERE sum_credit.crdb = -1");
+
+    $debit_total = mysqli_fetch_array($debit_query);
+
+    return $debit_total[0];
+}
+
+function getCreditYearly()
+{
+    $year = $_SESSION['year'];
+    $con = mysqli_connect("mysql-georgebotnaru.alwaysdata.net", "214676_test", "069249335", "georgebotnaru_budget_app");
+    $credit_query = mysqli_query(
+        $con,
+        "SELECT SUM(montant) AS total FROM ( SELECT montant, dataTransaction, categories.crdb FROM transactions INNER JOIN categories WHERE transactions.idCategories = categories.idCategories AND YEAR(dataTransaction) = $year) AS sum_credit WHERE sum_credit.crdb = 1"
+    );
+
+    $credit_total = mysqli_fetch_array($credit_query);
+
+    return $credit_total[0];
+}
+
+function getOptions()
+{
+    $id_cat = $_SESSION['f_cats'];
+    $id_moyen = $_SESSION['f_moyen'];
+    $id_crdb = $_SESSION['f_crdb'];
+
+    $con = mysqli_connect("mysql-georgebotnaru.alwaysdata.net", "214676_test", "069249335", "georgebotnaru_budget_app");
+
+    if ($id_cat > 0 && $id_moyen > 0 && ($id_crdb == 1 || $id_crdb == -1)) {
+        $transactions_query_last_5 = mysqli_query($con, "SELECT * FROM (SELECT idTransactions, dataTransaction, montant, transactions.idCategories, categories.crdb, idMoyenPaiement FROM transactions INNER JOIN categories WHERE categories.idCategories =
+transactions.idCategories) as a INNER JOIN moyenpaiements where a.idMoyenPaiement = moyenpaiements.idMoyenPaiement AND a.idMoyenPaiement = $id_moyen AND a.idCategories = $id_cat AND crdb = $id_crdb ORDER BY dataTransaction DESC");
+    } else if (
+        $id_cat > 0 && $id_moyen > 0
+    ) {
+        $transactions_query_last_5 = mysqli_query($con, "SELECT * FROM (SELECT idTransactions, dataTransaction, montant, transactions.idCategories, categories.crdb, idMoyenPaiement FROM transactions INNER JOIN categories WHERE categories.idCategories =
+transactions.idCategories) as a INNER JOIN moyenpaiements where a.idMoyenPaiement = moyenpaiements.idMoyenPaiement AND a.idMoyenPaiement = $id_moyen AND a.idCategories = $id_cat  ORDER BY dataTransaction DESC");
+    } else if ($id_cat > 0) {
+        $transactions_query_last_5 = mysqli_query($con, "SELECT * FROM (SELECT idTransactions, dataTransaction, montant, transactions.idCategories, categories.crdb, idMoyenPaiement FROM transactions INNER JOIN categories WHERE categories.idCategories =
+transactions.idCategories) as a INNER JOIN moyenpaiements where a.idMoyenPaiement = moyenpaiements.idMoyenPaiement AND a.idCategories = $id_cat ORDER BY dataTransaction DESC");
+    } else if ($id_moyen > 0) {
+        $transactions_query_last_5 = mysqli_query($con, "SELECT * FROM (SELECT idTransactions, dataTransaction, montant, transactions.idCategories, categories.crdb, idMoyenPaiement FROM transactions INNER JOIN categories WHERE categories.idCategories =
+transactions.idCategories) as a INNER JOIN moyenpaiements where a.idMoyenPaiement = moyenpaiements.idMoyenPaiement AND a.idMoyenPaiement = $id_moyen ORDER BY dataTransaction DESC");
+    } else if ($id_crdb == 1 || $id_crdb == -1) {
+        $transactions_query_last_5 = mysqli_query($con, "SELECT * FROM (SELECT idTransactions, dataTransaction, montant, transactions.idCategories, categories.crdb, idMoyenPaiement FROM transactions INNER JOIN categories WHERE categories.idCategories =
+transactions.idCategories) as a INNER JOIN moyenpaiements where a.idMoyenPaiement = moyenpaiements.idMoyenPaiement AND a.crdb= $id_crdb");
+    } else {
+        $transactions_query_last_5 = mysqli_query($con, "SELECT * FROM (SELECT idTransactions, dataTransaction, montant, transactions.idCategories, categories.crdb, idMoyenPaiement FROM transactions INNER JOIN categories WHERE categories.idCategories = transactions.idCategories) as a INNER JOIN moyenpaiements where a.idMoyenPaiement = moyenpaiements.idMoyenPaiement ORDER BY dataTransaction DESC");
+    }
+
+    while ($row = mysqli_fetch_array($transactions_query_last_5)) {
+        echo '<section class="transaction">';
+        $index = (int)$row['idCategories'];
+        echo '<div class="title">' . getCategoryById($index) . '</div>';
+        echo '<div class="moyen">' . $row['moyenPaiement'] . '</div>';
+        echo '<div class="date">' . array_shift(explode(" ", $row['dataTransaction'])) . '</div>';
+        if ($row['crdb'] == 1) {
+            echo
+            '<div class="amount" id="credit">' . $row['montant'] . '</div>';
+        } else {
+            echo '<div class="amount" id="debit">' . $row['montant'] . '</div>';
+        }
+        echo '</section>';
+    }
+}
+
+
+function getCredit()
+{
+    $con = mysqli_connect("mysql-georgebotnaru.alwaysdata.net", "214676_test", "069249335", "georgebotnaru_budget_app");
+    $debit_query = mysqli_query($con, "SELECT SUM(montant) AS total FROM ( SELECT montant, categories.crdb FROM transactions INNER JOIN categories WHERE transactions.idCategories = categories.idCategories) AS sum_credit WHERE sum_credit.crdb = 1");
+    $debit_total = mysqli_fetch_array($debit_query);
+    return $debit_total[0];
+}
+
+function getDebit()
+{
+    $con = mysqli_connect("mysql-georgebotnaru.alwaysdata.net", "214676_test", "069249335", "georgebotnaru_budget_app");
+    $debit_query = mysqli_query($con, "SELECT SUM(montant) AS total FROM ( SELECT montant, categories.crdb FROM transactions INNER JOIN categories WHERE transactions.idCategories = categories.idCategories) AS sum_credit WHERE sum_credit.crdb = -1");
+    $debit_total = mysqli_fetch_array($debit_query);
+    return $debit_total[0];
+}
+
 function getBalance()
 {
-
     echo number_format(getCredit() - getDebit(), 2);
 }
+
 
 // Errors
 $error_array = array();
@@ -89,6 +209,7 @@ if (isset($_POST['register-button'])) {
 
     if (empty($error_array)) {
         $insert_transaction_query = mysqli_query($con, "INSERT INTO transactions (montant, commentaire, idCategories, idMoyenPaiement) VALUES ('$reg_montant','$reg_commentaire','$reg_cat','$reg_moyen')");
+        array_push($error_array, "Field moyen paiement cannot be empty<br/>");
         $reg_montant = "";
         $reg_commentaire = "";
         $reg_cat = "";
@@ -115,7 +236,7 @@ if (isset($_POST['register-button'])) {
     </div>
     <!-- Form -->
     <section class="form">
-        <form action="index.php" method="POST">
+        <form action="index.php" method="POST" id="modal-form">
             <h2>
                 Ajouter transaction
             </h2>
@@ -124,7 +245,7 @@ if (isset($_POST['register-button'])) {
                 <input type="number" min="0" step="0.01" name="montant" id="montant" />
             </div>
             <div>
-                <label for=" categorie">Categorie</label>
+                <label for="categorie">Categorie</label>
                 <select id="categorie" name="categorie">
                     <option value=""> -- Choisir categorie --</option>
                     <?php
@@ -171,18 +292,43 @@ if (isset($_POST['register-button'])) {
         <section class="panels">
             <section class="balance">
 
-                <h3>Balance</h3>
+                <h3>Solde</h3>
                 <h2><?php getBalance() ?></h2>
             </section>
             <button id="display-form">
-                Add transaction
+                Ajouter transaction
             </button>
         </section>
+
+        <!-- Chart -->
         <section class="chart">
-            <section>
-                <div class="title">Presentation</div>
-                <button>Mensuel</button>
-                <button>Annuel</button>
+            <section id="info">
+                <form id="info-mode" action="index.php" method="POST">
+                    <?php if ($_SESSION['mode'] === 'Mensuel') {
+                        echo
+                        '<div>
+                        <label for="month">Mois</label>
+                        <input type="number" id="month" value=' . $_SESSION['month'] . ' name="month" min="0" max="12">
+                    </div>';
+                    } else {
+                        echo '<div>
+                        <label for="year">Annee</label>
+                        <input type="number" id="year" value=' . $_SESSION['year'] . ' name="year" min="2000" max="2032">
+                    </div>';
+                    } ?>
+                    <input type="submit" value="Filtrer" name="register-presentation" id="register-presentation">
+                </form>
+            </section>
+            <section id="nav">
+                <form action="index.php" method="POST">
+                    <div class="title">Presentation</div>
+                    <input type="submit" name="mensuel" id="mensuel" value="Mensuel" <?php if ($_SESSION['mode'] == 'Mensuel') {
+                                                                                            echo 'style="border: 4px solid darkgrey;"';
+                                                                                        } ?> />
+                    <input type="submit" name="annuel" id="annuel" value="Annuel" <?php if ($_SESSION['mode'] == 'Annuel') {
+                                                                                        echo 'style="border: 4px solid darkgrey;"';
+                                                                                    } ?> />
+                </form>
             </section>
             <canvas id="myChart" width="100" height="100"></canvas>
         </section>
@@ -190,53 +336,62 @@ if (isset($_POST['register-button'])) {
 
     <!-- Transaction -->
     <section class="transactions">
-        <h2>Transactions recentes</h2>
+        <h2>Transactions</h2>
         <section class="filter-transactions">
-            <div class="title">Filtrer transactions</div>
-            <select value="0" name="" id="">
-                <option value="0">Mensuel</option>
-                <option value="1">Annuel</option>
-            </select>
-            <select value="0" name="" id="">
-                <option value=""> -- Categories --</option>
-                <?php
-                while ($row = mysqli_fetch_array($categorie_query_filter)) {
-                    echo '<option value="' . $row['idCategories'] . '">' . $row['nomCategorie'] . '</option>';
-                }
-                ?>
-            </select>
-            <select id="moyen" name="moyen">
-                <option value=""> -- Moyens --</option>
-                <?php
-                while ($row = mysqli_fetch_array($type_paiements_query_filter)) {
-                    echo '<option value="' . $row['idMoyenPaiement'] . '">' . $row['moyenPaiement'] . '</option>';
-                }
-                ?>
-            </select>
+            <form action="index.php" method="POST">
+                <input type="submit" class="filter_button" name="Filtrer" value="Filtrer">
+                <select name="f_cats" id="f_cats">
+                    <option value=""> -- Toutes catégories --</option>
+                    <?php
+                    while ($row = mysqli_fetch_array($categorie_query_filter)) {
+                        if ($row['idCategories'] == $_SESSION["f_cats"])
+                            echo
+                            '<option selected="selected" value="' . $row['idCategories'] . '">' . $row['nomCategorie'] . '</option>';
+                        else
+                            echo '<option value="' . $row['idCategories'] . '">' . $row['nomCategorie'] . '</option>';
+                    }
+                    ?>
+                </select>
+                <select id="f_crdb" name="f_crdb">
+                    <option value=""> -- Tout type --</option>
+                    <?php
+                    while ($row = mysqli_fetch_array($type_crdb_query)) {
+                        if ($row['crdb'] == $_SESSION['f_crdb'])
+                            echo '<option selected="selected" value="' . $row['crdb'] . '">' . $row['crdb'] . '</option>';
+                        else
+                            echo '<option value="' . $row['crdb'] . '">' . $row['crdb'] . '</option>';
+                    }
+                    ?>
+                </select>
+                <select id="f_moyen" name="f_moyen">
+                    <option value=""> -- Toutes moyennes --</option>
+                    <?php
+                    while ($row = mysqli_fetch_array($type_paiements_query_filter)) {
+                        if ($row['idMoyenPaiement'] == $_SESSION['f_moyen'])
+                            echo '<option selected="selected" value="' . $row['idMoyenPaiement'] . '">' . $row['moyenPaiement'] . '</option>';
+                        else
+                            echo '<option value="' . $row['idMoyenPaiement'] . '">' . $row['moyenPaiement'] . '</option>';
+                    }
+                    ?>
+                </select>
+            </form>
 
         </section>
         <section class="list-transactions">
             <?php
-            while ($row = mysqli_fetch_array($transactions_query_last_5)) {
-                echo '<section class="transaction">';
-                $index = (int)$row['idCategories'];
-                echo '<div class="title">' . getCategoryById($index) . '</div>';
-                echo '<div class="date">' . array_shift(explode(" ", $row['dataTransaction'])) . '</div>';
-                if ($row['crdb'] == 1) {
-                    echo
-                    '<div class="amount" id="credit">' . $row['montant'] . '</div>';
-                } else {
-                    echo '<div class="amount" id="debit">' . $row['montant'] . '</div>';
-                }
-                echo '</section>';
-            }
+            getOptions()
             ?>
         </section>
     </section>
 
     <script src='./main.js'></script>
     <script>
+        let defaultChartView = "monthly";
+
         var ctx = document.getElementById("myChart");
+        const monthButton = document.querySelector("#mensuel");
+        const annualButton = document.querySelector("#annuel");
+        const registerPresentation = document.querySelector("#register-presentation");
 
         var myChart = new Chart(ctx, {
             type: "pie",
@@ -244,7 +399,15 @@ if (isset($_POST['register-button'])) {
                 labels: ["Debit", "Credit"],
                 datasets: [{
                     // label: "# of Votes",
-                    data: [<?php echo getDebit() ?>, <?php echo getCredit() ?>],
+                    data: [<?php if ($_SESSION['mode'] === 'Mensuel') {
+                                echo getDebitMonthly();
+                            } else {
+                                echo getDebitYearly();
+                            } ?>, <?php if ($_SESSION['mode'] === 'Annuel') {
+                                        echo getCreditYearly();
+                                    } else {
+                                        echo getCreditMonthly();
+                                    } ?>],
                     backgroundColor: [
                         "#f7c662",
                         "#ef5260",
